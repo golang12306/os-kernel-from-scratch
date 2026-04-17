@@ -18,4 +18,4 @@ demos/
 ## 系列文章
 
 - [80286与保护模式](https://mp.weixin.qq.com/s?__biz=MzAxMjQwMjA5NQ==&mid=501991915)
-- [一个 write() 调用，x86 背后翻了什么跟头？](https://mp.weixin.qq.com/s?__biz=MzAxMjQwMjA5NQ==&mid=501991973)
+- [从零写OS内核：一个 write() 调用，x86 背后翻了什么跟头？](https://mp.weixin.qq.com/s?__biz=MzAxMjQwMjA5NQ==&mid=501991973)

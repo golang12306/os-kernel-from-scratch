@@ -2,5 +2,6 @@
 
 ## 文章核心内容
 
-- prlimit(pid, RLIMIT_NOFILE, &new, &old)
-- /proc/<pid>/limits
+- prlimit: RLIMIT_NOFILE / RLIMIT_AS
+- ulimit 底层
+- OOM Killer

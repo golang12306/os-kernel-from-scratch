@@ -2,6 +2,6 @@
 
 ## 文章核心内容
 
-- userfaultfd() 拦截 page fault
-- 用户态决定怎么填充页
-- 用于：虚拟机内存去重、CRIU
+- 缺页事件发用户态处理
+- UFFDIO_COPY 填页
+- Post-copy live migration

@@ -2,6 +2,6 @@
 
 ## 文章核心内容
 
-- SQ/CQ 共享内存队列
-- 批量提交减少 syscall
-- Linux 5.1+ 支持
+- SQE/CQE 环形队列
+- io_uring_setup + submit + wait
+- Linux 5.1+ 异步 IO

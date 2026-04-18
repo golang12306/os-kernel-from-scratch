@@ -2,6 +2,6 @@
 
 ## 文章核心内容
 
-- kprobe：内核函数入口探测
-- pre_handler/post_handler：前后处理
-- perf probe 底层依赖 kprobe
+- kprobe: 函数入口
+- kretprobe: 函数返回
+- bpftrace 底层

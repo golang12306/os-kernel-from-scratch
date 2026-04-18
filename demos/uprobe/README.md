@@ -2,6 +2,6 @@
 
 ## 文章核心内容
 
-- uprobe：用户态函数探测
-- 不需要改代码，不需要重启
-- perf probe -x /path/to/bin
+- uprobe: 用户函数入口
+- uretprobe: 用户函数返回
+- perf probe -x

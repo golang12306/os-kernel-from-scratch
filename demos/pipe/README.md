@@ -1,8 +1,7 @@
-# 管道和IPC 演示
+# pipe 演示
 
 ## 文章核心内容
 
-- pipe：单向字节流，内核缓冲区
-- socketpair：双向 Unix Domain Socket
-- pipe + fork 实现 shell 命令链
-- Unix Socket vs TCP Socket
+- pipe[0]=read, pipe[1]=write
+- 环形缓冲区 PAGE_SIZE
+- fork + pipe + dup2 实现管道命令

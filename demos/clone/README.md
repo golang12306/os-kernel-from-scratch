@@ -1,7 +1,7 @@
-# clone 系统调用演示
+# clone 演示
 
 ## 文章核心内容
 
-- fork/vfork/clone 都是 clone 的封装
-- CLONE_VM 决定是否共享地址空间
-- 线程 = 共享地址空间的 clone
+- clone = Linux 创建进程/线程的统一接口
+- fork = clone(CLONE_VM=0)
+- pthread_create = clone(CLONE_VM|CLONE_FS|CLONE_FILES...)

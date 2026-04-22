@@ -53,6 +53,38 @@ perf stat -e 'syscalls:sys_enter_futex' ./futex_v4
 
 ## 踩坑提示
 
-- futex_unlock 必须先 `atomic_store(&lock, 0)` 再 `futex_wake`，顺序不能反
-- futex 只能用于同一进程内的线程同步，跨进程需要共享内存 futex
-- spurious wakeup 必须循环重试，不能假设醒来就一定拿到锁
+### 坑 A（最关键）：不能用 `stdatomic.h` 的 `atomic_int`
+
+**现象**：用 `atomic_int` 配合 `futex_wait/futex_wake`，程序会**卡死**——`FUTEX_WAKE` 永远返回 0，没有任何线程真正睡下，strace 可见大量空循环的 futex_wake。
+
+**原因**：Linux 内核在 `futex_wait` 进内核时，**直接读用户态虚拟地址**上的值。但 C11 `atomic_int` 的可见性由内存模型控制，和内核读取时机之间存在 race——内核读到的可能是旧值，导致 `futex_wait` 在应该睡下时直接返回（或永远不返回）。futex 设计依赖内核能读到锁的真实状态。
+
+**解决**：futex 操作使用**普通 `int` 变量**，配合 gcc 内联原子操作：
+
+```c
+// 错误：atomic_int 导致内核读不到最新值
+atomic_int lock = 0;
+futex_wait((int *)&lock, 1);  // 进内核时值可能已变，线程不睡下
+
+// 正确：普通 int，内核可正确读写
+static int lock = 0;
+futex_wait(&lock, 1);   // OK
+// CAS 用 __sync_bool_compare_and_swap（带内存屏障）
+if (__sync_bool_compare_and_swap(&lock, 0, 1)) return;  // 成功
+```
+
+**根本原因**：futex 是 2003 年的 Linux 2.6 API，比 C11 atomics（2011）早了 8 年，内核始终假设用户态使用普通内存访问 + 显式内存屏障（x86 的 `mov` 指令天然有内存序保证）。C11 atomics 的 acquire/release 语义在内核层面的可见性边界上没有标准保证。
+
+---
+
+### 坑 B：futex_unlock 必须先改值再唤醒
+
+`atomic_store(&lock, 0)` → `futex_wake()`，顺序绝对不能反。
+
+### 坑 C：spurious wakeup 必须循环重试
+
+`futex_wait` 可能被信号打断，醒来不代表拿到锁，必须重新 CAS。
+
+### 坑 D：标准 futex 只能用于同一进程内线程同步
+
+跨进程需要共享内存 futex（更复杂，glibc 未直接暴露）。

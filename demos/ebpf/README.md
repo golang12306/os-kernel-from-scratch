@@ -2,48 +2,58 @@
 
 ## 文章关联
 
-对应公众号文章：《从零写OS内核 | eBPF：内核里的「任意门」，想进就进》
+- 《从零写OS内核 | eBPF 入门——内核里的「任意门」，想进就进》（241）
+- 《从零写OS内核 | eBPF 进阶——CO-RE + libbpf + BTF：一次编译，跨内核运行》（242）
 
 ## 文件说明
 
 | 文件 | 说明 |
 |------|------|
-| `hello.bt` | bpftrace 脚本，追踪所有 open/openat 系统调用 |
-| `opensnoop.py` | bcc Python 版，追踪所有 open/openat 调用 |
-| `hello_libbpf.c` | libbpf + CO-RE 版，最接近生产的使用方式 |
+| `hello.bt` | bpftrace 脚本，追踪所有 open/openat 系统调用（241 配套） |
+| `opensnoop.py` | bcc Python 版，追踪所有 open/openat 调用（241 配套） |
+| `hello_libbpf.c` | libbpf + CO-RE 版，展示完整 CO-RE 结构（241 配套） |
+| `hello_core/` | CO-RE 完整示例：Makefile + .bpf.c + user.c（242 配套） |
 
-## 运行方法
+## CO-RE 示例（242 配套）
 
-### hello.bt（bpftrace）
+目录：`demos/ebpf/hello_core/`
 
-```bash
-# 安装 bpftrace
-sudo apt install bpftrace
+```makefile
+# 生成 vmlinux.h（从本机 BTF 数据）
+vmlinux.h:
+	sudo bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h
 
-# 运行
-sudo bpftrace demos/ebpf/hello.bt
+# 编译 BPF 目标文件
+hello_core.bpf.o: hello_core.bpf.c vmlinux.h
+	clang -target bpf -O2 -g -c $< -o $@
+
+# 编译用户态程序
+hello_core_user.o: hello_core_user.c
+	clang -O2 -Wall -I. -c $< -o $@
+
+all: hello_core.bpf.o hello_core_user.o
+	clang hello_core_user.o -o hello_core_user -lbpf -lelf -lz
+
+clean:
+	rm -f *.bpf.o *.o hello_core_user vmlinux.h
 ```
 
-### opensnoop.py（bcc）
+运行：
 
 ```bash
-# 安装 bcc-tools
-sudo apt install bpfcc-tools linux-headers-$(uname -r)
+# 1. 生成 vmlinux.h（需要 root）
+sudo bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h
 
-# 运行（也可以直接用系统自带的）
-sudo /usr/share/bcc/tools/opensnoop
-# 或
-sudo python3 demos/ebpf/opensnoop.py
+# 2. 编译
+make all
+
+# 3. 运行（root）
+sudo ./hello_core_user
 ```
 
-### hello_libbpf.c（libbpf + CO-RE）
-
-需要 clang + libbpf + llvm-objcopy，配合 libbpf-bootstrap 使用。
+查看 trace 输出：
 
 ```bash
-# 编译为 BPF 目标文件
-clang -target bpf -O2 -g -c demos/ebpf/hello_libbpf.c
-
-# 提取 BPF 字节码
-llvm-objcopy -O binary hello_libbpf.o hello_libbpf.bpf.o
+# 另一个终端
+sudo cat /sys/kernel/debug/tracing/trace_pipe
 ```
